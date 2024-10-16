@@ -20,14 +20,35 @@ const clearButton = document.createElement('button');
 clearButton.textContent = 'Clear';
 app.appendChild(clearButton);
 
+//undo button
+const undoButton = document.createElement("button");
+undoButton.textContent = 'Undo';
+app.appendChild(undoButton);
+
+//redo button
+const redoButton = document.createElement("button");
+redoButton.textContent = 'Redo';
+app.appendChild(redoButton);
+
 let isDrawing = false;
-let points: [number, number] [] [] = [];
-let currentPath: [number, number] [] = [];
+let points: Point[] [] = [];
+let currentPath: Point[] = [];
+
+interface Point {
+    x: number;
+    y: number;
+  }
+  
+  //Arrays to hold drawing states
+  let displayList: Point[][] = [];
+  let redoStack: Point[][] = []; 
+  let currentLine: Point[] = []; 
+  
 
 const drawingChanged = new Event("drawing-changed");
 
 function addPoint(x: number, y: number) {
-    currentPath.push([x, y]);
+    currentPath.push({x, y});
     canvas.dispatchEvent(drawingChanged);
 }
 
@@ -43,6 +64,9 @@ canvas.addEventListener('mousedown', (event) => {
       isDrawing = false;
       if (currentPath.length > 0) {
         points.push(currentPath);
+        displayList.push(currentPath);
+        redoStack = [];
+        canvas.dispatchEvent(drawingChanged);
       }
     }
   });
@@ -64,9 +88,9 @@ canvas.addEventListener('mousedown', (event) => {
 
     for (const path of points) {
         context.beginPath();
-        context.moveTo(path[0][0], path[0][1]);
+        context.moveTo(path[0].x, path[0].y);
         for (const point of path) {
-            context.lineTo(point[0], point[1]);
+            context.lineTo(point.x, point.y);
         }
         context.stroke();
         context.closePath();
@@ -78,9 +102,9 @@ canvas.addEventListener('mousedown', (event) => {
     this way, they are now appearing as you draw them*/
     if (currentPath.length > 0) {
         context.beginPath();
-        context.moveTo(currentPath[0][0], currentPath[0][1]);
+        context.moveTo(currentPath[0].x, currentPath[0].y);
         for (const point of currentPath) {
-            context.lineTo(point[0], point[1]);
+            context.lineTo(point.x, point.y);
         }
         context.stroke();
         context.closePath();
@@ -94,6 +118,28 @@ canvas.addEventListener('mousedown', (event) => {
     if (!context) return; //this line included to get pass a 'context possibly null error' that was being thrown
     context.clearRect(0, 0, canvas.width, canvas.height);
     points = [];
+  });
+
+  undoButton.addEventListener('click', () => {
+    if (displayList.length > 0) {
+        const lastPath = displayList.pop();
+        if (lastPath) {
+            redoStack.push(lastPath);
+            points.pop();
+            canvas.dispatchEvent(drawingChanged);
+        }
+    }
+  });
+
+  redoButton.addEventListener('click', () => {
+    if (redoStack.length > 0) {
+        const redoPath = redoStack.pop();
+        if (redoPath) {
+            displayList.push(redoPath);
+            points.push(redoPath);
+            canvas.dispatchEvent(drawingChanged);
+        }
+    }
   });
 
 
