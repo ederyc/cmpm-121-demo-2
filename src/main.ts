@@ -31,8 +31,41 @@ redoButton.textContent = 'Redo';
 app.appendChild(redoButton);
 
 let isDrawing = false;
-let points: Point[] [] = [];
-let currentPath: Point[] = [];
+const _points: Point[] [] = [];
+const currentPath: Point[] = [];
+
+interface Displayable {
+  display(context: CanvasRenderingContext2D): void;
+}
+
+class MarkerLine implements Displayable {
+  private points: Point [] = [];
+
+  constructor(startX: number, startY: number) {
+    this.points.push({x: startX, y: startY});
+  }
+
+  drag(x: number, y: number) {
+    this.points.push({x, y});
+  }
+
+  display(context: CanvasRenderingContext2D) {
+    if (this.points.length < 2) return;
+
+    //set stroke style and width
+    context.strokeStyle = 'blue';
+    context.lineWidth = 2;
+
+    context.beginPath();
+    context.moveTo(this.points[0].x, this.points[0].y);
+    for (const point of this.points) {
+      context.lineTo(point.x, point.y);
+    }
+    context.stroke();
+    context.closePath();
+  }
+    
+}
 
 interface Point {
     x: number;
@@ -40,40 +73,35 @@ interface Point {
   }
   
   //Arrays to hold drawing states
-  let displayList: Point[][] = [];
-  let redoStack: Point[][] = []; 
-  let currentLine: Point[] = []; 
+  let displayList: Displayable[] = [];
+  let redoStack: Displayable[] = []; 
+  let currentLine: MarkerLine | null = null; 
   
 
 const drawingChanged = new Event("drawing-changed");
 
-function addPoint(x: number, y: number) {
-    currentPath.push({x, y});
-    canvas.dispatchEvent(drawingChanged);
-}
 
 canvas.addEventListener('mousedown', (event) => {
-    currentPath = [];
-    addPoint(event.offsetX, event.offsetY);
+    currentLine = new MarkerLine(event.offsetX, event.offsetY);
+    displayList.push(currentLine);
     isDrawing = true;
   });
   
   
   globalThis.addEventListener('mouseup', () => {
-    if (isDrawing) {
+    if (isDrawing && currentLine) {
+      redoStack = [];
       isDrawing = false;
-      if (currentPath.length > 0) {
-        points.push(currentPath);
-        displayList.push(currentPath);
-        redoStack = [];
-        canvas.dispatchEvent(drawingChanged);
-      }
+      canvas.dispatchEvent(drawingChanged);
+      currentLine = null
     }
+
   });
 
   canvas.addEventListener('mousemove', (event) => {
-    if (isDrawing) {
-        addPoint(event.offsetX, event.offsetY);
+    if (isDrawing && currentLine) {
+        currentLine.drag(event.offsetX, event.offsetY);
+        canvas.dispatchEvent(drawingChanged);
     }
   });
 
@@ -83,17 +111,9 @@ canvas.addEventListener('mousedown', (event) => {
   function redrawCanvas() {
     if (!context) return;
     context.clearRect(0, 0, canvas.width, canvas.height);
-    context.lineWidth = 2;
-    context.strokeStyle = 'blue';
 
-    for (const path of points) {
-        context.beginPath();
-        context.moveTo(path[0].x, path[0].y);
-        for (const point of path) {
-            context.lineTo(point.x, point.y);
-        }
-        context.stroke();
-        context.closePath();
+    for (const displayable of displayList) {
+      displayable.display(context);
     }
 
     /*this part needed to be added because before when I would
@@ -117,7 +137,9 @@ canvas.addEventListener('mousedown', (event) => {
   clearButton.addEventListener('click', () => {
     if (!context) return; //this line included to get pass a 'context possibly null error' that was being thrown
     context.clearRect(0, 0, canvas.width, canvas.height);
-    points = [];
+    displayList = []; //clear the displayList
+    redoStack = []; //clear the redoStack
+    canvas.dispatchEvent(drawingChanged);
   });
 
   undoButton.addEventListener('click', () => {
@@ -125,7 +147,6 @@ canvas.addEventListener('mousedown', (event) => {
         const lastPath = displayList.pop();
         if (lastPath) {
             redoStack.push(lastPath);
-            points.pop();
             canvas.dispatchEvent(drawingChanged);
         }
     }
@@ -136,7 +157,6 @@ canvas.addEventListener('mousedown', (event) => {
         const redoPath = redoStack.pop();
         if (redoPath) {
             displayList.push(redoPath);
-            points.push(redoPath);
             canvas.dispatchEvent(drawingChanged);
         }
     }
