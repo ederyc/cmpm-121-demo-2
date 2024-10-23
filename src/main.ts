@@ -11,6 +11,8 @@ canvas.width = 256;
 canvas.height = 256;
 canvas.id = 'canvas';
 app.appendChild(canvas);
+//default line width (thin)
+let lineWidth = 2; 
 
 const context = canvas.getContext('2d');
 
@@ -30,6 +32,32 @@ const redoButton = document.createElement("button");
 redoButton.textContent = 'Redo';
 app.appendChild(redoButton);
 
+//thin button
+const thinButton = document.createElement('button');
+thinButton.textContent = 'Thin';
+thinButton.id = 'thin-button';
+app.appendChild(thinButton);
+
+thinButton.classList.add('active');
+
+thinButton.addEventListener('click', () => {
+  lineWidth = 2;
+  thinButton.classList.add('active');
+  thickButton.classList.remove('active');
+});
+
+//thick button
+const thickButton = document.createElement('button');
+thickButton.textContent = 'Thick';
+thickButton.id = 'thick-button';
+app.appendChild(thickButton);
+
+thickButton.addEventListener('click', () => {
+  lineWidth = 6;
+  thickButton.classList.add('active');
+  thinButton.classList.remove('active');
+});
+
 let isDrawing = false;
 const _points: Point[] [] = [];
 const currentPath: Point[] = [];
@@ -40,9 +68,11 @@ interface Displayable {
 
 class MarkerLine implements Displayable {
   private points: Point [] = [];
+  private lineWidth: number;
 
-  constructor(startX: number, startY: number) {
+  constructor(startX: number, startY: number, lineWidth: number) {
     this.points.push({x: startX, y: startY});
+    this.lineWidth = lineWidth;
   }
 
   drag(x: number, y: number) {
@@ -54,9 +84,9 @@ class MarkerLine implements Displayable {
 
     //set stroke style and width
     context.strokeStyle = 'blue';
-    context.lineWidth = 2;
 
     context.beginPath();
+    context.lineWidth = this.lineWidth;
     context.moveTo(this.points[0].x, this.points[0].y);
     for (const point of this.points) {
       context.lineTo(point.x, point.y);
@@ -82,7 +112,7 @@ const drawingChanged = new Event("drawing-changed");
 
 
 canvas.addEventListener('mousedown', (event) => {
-    currentLine = new MarkerLine(event.offsetX, event.offsetY);
+    currentLine = new MarkerLine(event.offsetX, event.offsetY, lineWidth);
     displayList.push(currentLine);
     isDrawing = true;
   });
@@ -161,5 +191,3 @@ canvas.addEventListener('mousedown', (event) => {
         }
     }
   });
-
-

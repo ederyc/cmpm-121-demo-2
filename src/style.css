@@ -80,6 +80,12 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
+
+button.active {
+  background-color: lightblue;
+  border: 2px solid blue;
+}
+
 button:hover {
   border-color: #646cff;
 }
