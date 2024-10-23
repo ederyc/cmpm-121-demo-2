@@ -49,6 +49,10 @@ canvas {
   margin-bottom : 10px;
 }
 
+#canvas {
+  cursor: none;
+}
+
 .logo {
   height: 6em;
   padding: 1.5em;

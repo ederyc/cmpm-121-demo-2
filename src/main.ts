@@ -66,6 +66,37 @@ interface Displayable {
   display(context: CanvasRenderingContext2D): void;
 }
 
+
+class ToolPreview implements Displayable {
+  lineWidth: number;
+  private x: number = 0;
+  private y: number = 0;
+
+  updatePosition(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+  }
+
+  constructor(x: number, y: number, lineWidth: number) {
+    this.lineWidth = lineWidth;
+    this.x = x;
+    this.y = y;
+  }
+
+  display(context: CanvasRenderingContext2D) {
+    context.save();
+    context.lineWidth = this.lineWidth;
+    context.strokeStyle = 'white'; 
+    context.beginPath();
+    context.arc(this.x, this.y, this.lineWidth / 2, 0, Math.PI * 2); 
+    context.stroke();
+    context.restore();
+  }
+  
+
+}
+
+
 class MarkerLine implements Displayable {
   private points: Point [] = [];
   private lineWidth: number;
@@ -128,12 +159,26 @@ canvas.addEventListener('mousedown', (event) => {
 
   });
 
+  let toolPreview: ToolPreview | null = null;
+
   canvas.addEventListener('mousemove', (event) => {
-    if (isDrawing && currentLine) {
-        currentLine.drag(event.offsetX, event.offsetY);
-        canvas.dispatchEvent(drawingChanged);
+    if (!toolPreview) {
+      toolPreview = new ToolPreview(event.offsetX, event.offsetY, lineWidth);
+    } else {
+      toolPreview.updatePosition(event.offsetX, event.offsetY);
+      toolPreview.lineWidth = lineWidth;
     }
+    
+    if (isDrawing && currentLine) {
+      currentLine.drag(event.offsetX, event.offsetY);
+      canvas.dispatchEvent(drawingChanged);
+    }
+    
+    // Always dispatch tool-moved to draw the preview
+    canvas.dispatchEvent(new Event('tool-moved'));
   });
+  
+  
 
   //observer for drawing-changed
   canvas.addEventListener('drawing-changed', redrawCanvas);
@@ -144,6 +189,10 @@ canvas.addEventListener('mousedown', (event) => {
 
     for (const displayable of displayList) {
       displayable.display(context);
+    }
+
+    if (!isDrawing && toolPreview) {
+      toolPreview.display(context);
     }
 
     /*this part needed to be added because before when I would
@@ -190,4 +239,9 @@ canvas.addEventListener('mousedown', (event) => {
             canvas.dispatchEvent(drawingChanged);
         }
     }
+  });
+
+
+  canvas.addEventListener('tool-moved', () => {
+    redrawCanvas();
   });
