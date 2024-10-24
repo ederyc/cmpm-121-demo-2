@@ -118,6 +118,39 @@ customStickerButton.addEventListener('click', () => {
 
 
 
+//export button
+
+// Create the export button
+const exportButton = document.createElement('button');
+exportButton.textContent = 'Export';
+app.appendChild(exportButton);
+
+// Add the export button functionality
+exportButton.addEventListener('click', () => {
+  const exportCanvas = document.createElement('canvas');
+  exportCanvas.width = 1024;
+  exportCanvas.height = 1024;
+  const exportContext = exportCanvas.getContext('2d');
+  
+  if (!exportContext) return; // Ensure we have a context
+  
+  exportContext.scale(4, 4);
+
+  for (const displayable of displayList) {
+    if (!(displayable instanceof ToolPreview)) {
+      displayable.display(exportContext);
+    }
+  }
+
+  const anchor = document.createElement('a');
+  anchor.href = exportCanvas.toDataURL("image/png");
+  anchor.download = "sketchpad.png";
+  anchor.click();
+});
+
+
+
+
 interface Command {
   execute(): void;
 }
