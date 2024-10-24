@@ -44,6 +44,9 @@ thinButton.addEventListener('click', () => {
   lineWidth = 2;
   thinButton.classList.add('active');
   thickButton.classList.remove('active');
+
+  currentSticker = null;
+  stickerButtons.forEach((btn) => btn.classList.remove('active'));
 });
 
 //thick button
@@ -56,7 +59,98 @@ thickButton.addEventListener('click', () => {
   lineWidth = 6;
   thickButton.classList.add('active');
   thinButton.classList.remove('active');
+
+  currentSticker = null;
+  stickerButtons.forEach((btn) => btn.classList.remove('active'));
 });
+
+
+//sticker buttons
+const stickerAButton = document.createElement('button');
+stickerAButton.textContent = '😏';
+app.appendChild(stickerAButton);
+
+const stickerBButton = document.createElement('button');
+stickerBButton.textContent = '👩🏽‍🎤';
+app.appendChild(stickerBButton);
+
+const stickerCButton = document.createElement('button');
+stickerCButton.textContent = '😼';
+app.appendChild(stickerCButton);
+
+interface Command {
+  execute(): void;
+}
+
+class StickerPreviewCommand implements Command {
+  sticker: string;
+  x: number;
+  y: number;
+
+  constructor(sticker: string, x: number, y: number) {
+    this.sticker = sticker;
+    this.x = x;
+    this.y = y;
+  }
+
+  execute() {
+    if (!context) return;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.fillText(this.sticker, this.x, this.y);
+  }
+}
+
+class StickerPlacementCommand implements Command {
+  sticker: string;
+  x: number;
+  y: number;
+
+  constructor(sticker: string, x: number, y: number) {
+    this.sticker = sticker;
+    this.x = x;
+    this.y = y;
+  }
+
+  execute() {
+    if (!context) return;
+    context.fillText(this.sticker, this.x, this.y);
+  }
+
+  display() {
+    this.execute();
+  }
+
+  drag(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+    this.execute();
+  }
+}
+
+let currentSticker: string | null = null;
+
+const stickerButtons = [stickerAButton, stickerBButton, stickerCButton];
+
+stickerButtons.forEach((button) => {
+  button.addEventListener('click', () => {
+    // Set the current sticker to the one clicked
+    currentSticker = button.textContent;
+
+    // Remove 'active' class from all buttons and add it to the clicked one
+    stickerButtons.forEach((btn) => btn.classList.remove('active'));
+    button.classList.add('active');
+
+    // Clear any line tool selection
+    thinButton.classList.remove('active');
+    thickButton.classList.remove('active');
+
+    // Dispatch 'tool-moved' to start showing sticker preview
+    canvas.dispatchEvent(new Event('tool-moved'));
+  });
+});
+
+
+
 
 let isDrawing = false;
 const _points: Point[] [] = [];
@@ -162,21 +256,24 @@ canvas.addEventListener('mousedown', (event) => {
   let toolPreview: ToolPreview | null = null;
 
   canvas.addEventListener('mousemove', (event) => {
+    // Update tool preview position or create if missing
     if (!toolPreview) {
       toolPreview = new ToolPreview(event.offsetX, event.offsetY, lineWidth);
     } else {
       toolPreview.updatePosition(event.offsetX, event.offsetY);
-      toolPreview.lineWidth = lineWidth;
+      toolPreview.lineWidth = lineWidth; // Ensure thickness reflects current tool
     }
-    
+  
+    // If drawing, update the line with new points
     if (isDrawing && currentLine) {
       currentLine.drag(event.offsetX, event.offsetY);
-      canvas.dispatchEvent(drawingChanged);
     }
-    
-    // Always dispatch tool-moved to draw the preview
-    canvas.dispatchEvent(new Event('tool-moved'));
+  
+    // Dispatch 'drawing-changed' event to continuously update the canvas
+    canvas.dispatchEvent(drawingChanged);
   });
+  
+  
   
   
 
@@ -242,6 +339,25 @@ canvas.addEventListener('mousedown', (event) => {
   });
 
 
-  canvas.addEventListener('tool-moved', () => {
-    redrawCanvas();
-  });
+// Handle tool-moved event to preview the sticker
+canvas.addEventListener('tool-moved', (event: Event) => {
+  const mouseEvent = event as MouseEvent;
+  if (currentSticker) {
+    const stickerPreviewCommand = new StickerPreviewCommand(currentSticker, mouseEvent.offsetX, mouseEvent.offsetY);
+    stickerPreviewCommand.execute();
+  }
+});
+
+canvas.addEventListener('mousedown', (event) => {
+  // If a sticker is selected, place the sticker
+  if (currentSticker) {
+    const stickerPlacementCommand = new StickerPlacementCommand(currentSticker, event.offsetX, event.offsetY);
+    displayList.push(stickerPlacementCommand); // Add the sticker to the display list
+    canvas.dispatchEvent(drawingChanged);
+  } else {
+    // Otherwise, begin a new line
+    currentLine = new MarkerLine(event.offsetX, event.offsetY, lineWidth);
+    displayList.push(currentLine);
+    isDrawing = true;
+  }
+});
