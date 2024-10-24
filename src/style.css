@@ -85,6 +85,35 @@ button {
   transition: border-color 0.25s;
 }
 
+/* Specific button hover effects */
+#thin-button:hover {
+  background-color: lightblue; 
+}
+
+#thick-button:hover {
+  background-color: lightsteelblue; 
+}
+
+#clear-button:hover {
+  background-color: lightcoral;
+}
+
+#undo-button:hover {
+  background-color: lightseagreen; 
+}
+
+#redo-button:hover {
+  background-color: lightpink; 
+}
+
+.sticker-button:hover {
+  background-color: lightgoldenrodyellow; 
+}
+
+#custom-sticker-button:hover {
+  background-color: lightgray; 
+}
+
 button.active {
   background-color: lightblue;
   border: 2px solid blue;

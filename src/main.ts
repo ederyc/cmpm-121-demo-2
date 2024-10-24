@@ -20,16 +20,19 @@ const context = canvas.getContext('2d');
 //clear button
 const clearButton = document.createElement('button');
 clearButton.textContent = 'Clear';
+clearButton.id = 'clear-button';
 app.appendChild(clearButton);
 
 //undo button
 const undoButton = document.createElement("button");
 undoButton.textContent = 'Undo';
+undoButton.id = 'undo-button';
 app.appendChild(undoButton);
 
 //redo button
 const redoButton = document.createElement("button");
 redoButton.textContent = 'Redo';
+redoButton.id = 'redo-button';
 app.appendChild(redoButton);
 
 //thin button
@@ -177,15 +180,18 @@ class StickerPlacementCommand implements Command {
   sticker: string;
   x: number;
   y: number;
+  size: number;
 
-  constructor(sticker: string, x: number, y: number) {
+  constructor(sticker: string, x: number, y: number, size: number = 20) {
     this.sticker = sticker;
     this.x = x;
     this.y = y;
+    this.size = size;
   }
 
   execute() {
     if (!context) return;
+    context.font = `${this.size}px sans-serif`;
     context.fillText(this.sticker, this.x, this.y);
   }
 
