@@ -82,6 +82,7 @@ interface Sticker {
   name: string;
 }
 
+
 // Function to create a sticker button dynamically
 function createStickerButton(sticker: Sticker) {
   const button = document.createElement('button');
@@ -149,6 +150,26 @@ exportButton.addEventListener('click', () => {
   anchor.href = exportCanvas.toDataURL("image/png");
   anchor.download = "sketchpad.png";
   anchor.click();
+});
+
+
+
+//color picker
+let currentColor = '#000000';
+
+const colorPicker = document.createElement('input');
+colorPicker.type = 'color';
+colorPicker.value = currentColor;
+app.appendChild(colorPicker);
+
+const label = document.createElement('label');
+label.textContent = '<---Select Color';
+label.style.fontSize = '18px';
+label.style.marginRight = '10px';
+app.appendChild(label);
+
+colorPicker.addEventListener('input', (event) => {
+  currentColor = (event.target as HTMLInputElement).value;
 });
 
 
@@ -252,10 +273,12 @@ class ToolPreview implements Displayable {
 class MarkerLine implements Displayable {
   private points: Point [] = [];
   private lineWidth: number;
+  private color: string;
 
-  constructor(startX: number, startY: number, lineWidth: number) {
+  constructor(startX: number, startY: number, lineWidth: number, color: string) {
     this.points.push({x: startX, y: startY});
     this.lineWidth = lineWidth;
+    this.color = color;
   }
 
   drag(x: number, y: number) {
@@ -266,7 +289,7 @@ class MarkerLine implements Displayable {
     if (this.points.length < 2) return;
 
     //set stroke style and width
-    context.strokeStyle = 'blue';
+    context.strokeStyle = this.color;
 
     context.beginPath();
     context.lineWidth = this.lineWidth;
@@ -295,7 +318,7 @@ const drawingChanged = new Event("drawing-changed");
 
 
 canvas.addEventListener('mousedown', (event) => {
-    currentLine = new MarkerLine(event.offsetX, event.offsetY, lineWidth);
+    currentLine = new MarkerLine(event.offsetX, event.offsetY, lineWidth, currentColor);
     displayList.push(currentLine);
     isDrawing = true;
   });
@@ -414,7 +437,7 @@ canvas.addEventListener('mousedown', (event) => {
     canvas.dispatchEvent(drawingChanged);
   } else {
     // Otherwise, begin a new line
-    currentLine = new MarkerLine(event.offsetX, event.offsetY, lineWidth);
+    currentLine = new MarkerLine(event.offsetX, event.offsetY, lineWidth, currentColor);
     displayList.push(currentLine);
     isDrawing = true;
   }
