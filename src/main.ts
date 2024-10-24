@@ -66,17 +66,57 @@ thickButton.addEventListener('click', () => {
 
 
 //sticker buttons
-const stickerAButton = document.createElement('button');
-stickerAButton.textContent = '😏';
-app.appendChild(stickerAButton);
 
-const stickerBButton = document.createElement('button');
-stickerBButton.textContent = '👩🏽‍🎤';
-app.appendChild(stickerBButton);
+// Initial stickers array (data-driven)
+const stickers = [
+  { icon: '😏', name: 'Sticker A' },
+  { icon: '👩🏽‍🎤', name: 'Sticker B' },
+  { icon: '😼', name: 'Sticker C' }
+];
 
-const stickerCButton = document.createElement('button');
-stickerCButton.textContent = '😼';
-app.appendChild(stickerCButton);
+interface Sticker {
+  icon: string;
+  name: string;
+}
+
+// Function to create a sticker button dynamically
+function createStickerButton(sticker: Sticker) {
+  const button = document.createElement('button');
+  button.textContent = sticker.icon;
+  app.appendChild(button);
+
+  button.addEventListener('click', () => {
+    currentSticker = sticker.icon;
+    isDrawing = false; // Disable drawing mode when selecting a sticker
+    stickerButtons.forEach((btn) => btn.classList.remove('active'));
+    button.classList.add('active'); // Highlight the active sticker
+    canvas.dispatchEvent(new Event('tool-moved')); // Trigger tool-moved event
+  });
+
+  return button;
+}
+
+// Create sticker buttons from the array
+const stickerButtons = stickers.map(sticker => createStickerButton(sticker));
+
+
+// Custom sticker button
+const customStickerButton = document.createElement('button');
+customStickerButton.textContent = 'Create Custom Sticker';
+app.appendChild(customStickerButton);
+
+customStickerButton.addEventListener('click', () => {
+  const userSticker = prompt("Enter your custom sticker (e.g., emoji or text):", "👀");
+  if (userSticker) {
+    // Add new sticker to stickers array and create a button for it
+    const newSticker = { icon: userSticker, name: `Custom Sticker ${stickers.length + 1}` };
+    stickers.push(newSticker);
+    const newButton = createStickerButton(newSticker); // Create the new sticker button
+    stickerButtons.push(newButton); // Add to the array of sticker buttons
+  }
+});
+
+
 
 interface Command {
   execute(): void;
@@ -128,27 +168,6 @@ class StickerPlacementCommand implements Command {
 }
 
 let currentSticker: string | null = null;
-
-const stickerButtons = [stickerAButton, stickerBButton, stickerCButton];
-
-stickerButtons.forEach((button) => {
-  button.addEventListener('click', () => {
-    // Set the current sticker to the one clicked
-    currentSticker = button.textContent;
-
-    // Remove 'active' class from all buttons and add it to the clicked one
-    stickerButtons.forEach((btn) => btn.classList.remove('active'));
-    button.classList.add('active');
-
-    // Clear any line tool selection
-    thinButton.classList.remove('active');
-    thickButton.classList.remove('active');
-
-    // Dispatch 'tool-moved' to start showing sticker preview
-    canvas.dispatchEvent(new Event('tool-moved'));
-  });
-});
-
 
 
 
