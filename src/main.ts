@@ -1,10 +1,12 @@
 import "./style.css";
 
-const APP_NAME = "Eder's Cool App";
+
+const title = "Eder's Cool App";
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
-document.title = APP_NAME;
-
+const header = document.createElement("h1");
+header.innerHTML = title;
+app.append(header);
 
 const canvas = document.createElement('canvas');
 canvas.width = 256;
@@ -163,7 +165,7 @@ colorPicker.value = currentColor;
 app.appendChild(colorPicker);
 
 const label = document.createElement('label');
-label.textContent = '<---Select Color';
+label.textContent = 'Select Color';
 label.style.fontSize = '18px';
 label.style.marginRight = '10px';
 app.appendChild(label);
